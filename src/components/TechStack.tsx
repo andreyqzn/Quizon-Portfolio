@@ -1,4 +1,4 @@
-import { techStack } from '../data/content'
+import type { TechStackContent } from '../types/portfolio'
 import { TechIcon } from './icons'
 import { Card } from './Card'
 import { SectionTitle } from './SectionTitle'
@@ -11,7 +11,11 @@ function Chip({ label }: { label: string }) {
   )
 }
 
-export function TechStack() {
+type TechStackProps = {
+  techStack: TechStackContent
+}
+
+export function TechStack({ techStack }: TechStackProps) {
   return (
     <Card className="md:col-span-5">
       <SectionTitle icon={<TechIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>

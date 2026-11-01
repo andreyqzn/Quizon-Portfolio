@@ -1,14 +1,15 @@
-import { profile } from '../data/content'
+import type { ProfileContent } from '../types/portfolio'
 import type { Theme } from '../hooks/useTheme'
 import { CvIcon, EmailIcon, LocationIcon } from './icons'
 import { ThemeToggle } from './ThemeToggle'
 
 type HeaderProps = {
+  profile: ProfileContent
   theme: Theme
   onToggleTheme: () => void
 }
 
-export function Header({ theme, onToggleTheme }: HeaderProps) {
+export function Header({ profile, theme, onToggleTheme }: HeaderProps) {
   return (
     <header className="flex flex-row items-stretch justify-start gap-[15px]">
       <img

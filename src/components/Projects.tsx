@@ -1,9 +1,13 @@
-import { projects } from '../data/content'
+import type { ProjectItem } from '../types/portfolio'
 import { ProjectsIcon } from './icons'
 import { Card } from './Card'
 import { SectionTitle } from './SectionTitle'
 
-export function Projects() {
+type ProjectsProps = {
+  projects: ProjectItem[]
+}
+
+export function Projects({ projects }: ProjectsProps) {
   return (
     <Card className="md:col-span-8">
       <SectionTitle icon={<ProjectsIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>

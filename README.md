@@ -5,13 +5,14 @@ Employment-ready personal portfolio for **Andrey C. Quizon**, Frontend Developer
 **Live:** [https://andrey-quizon-portfolio-delta.vercel.app](https://andrey-quizon-portfolio-delta.vercel.app)  
 **GitHub:** [andreyqzn/Quizon-Portfolio](https://github.com/andreyqzn/Quizon-Portfolio)
 
-**Stack:** Vite · React · TypeScript · Tailwind CSS  
-**Features:** Dark / light mode, selected projects (Smart Queue, Dina's Mami House), resume download
+**Stack:** Vite · React · TypeScript · Tailwind CSS · Supabase  
+**Features:** Dark / light mode, private `/admin` CMS, selected projects, resume download
 
 ## Local development
 
 ```bash
 npm install
+cp .env.example .env.local   # fill Supabase URL + anon key
 npm run dev
 ```
 
@@ -20,50 +21,36 @@ npm run build
 npm run preview
 ```
 
-## Deploy on Vercel (Phase A)
+## Admin CMS (Supabase)
 
-1. Push this repo to GitHub (`andreyqzn/Quizon-Portfolio`).
-2. Sign in at [vercel.com](https://vercel.com) with your personal GitHub/Vercel account.
-3. **Add New Project** → Import this repository.
-4. Framework preset: **Vite** (or rely on `vercel.json`).
-5. Build command: `npm run build` · Output: `dist`.
-6. Deploy and save the `*.vercel.app` URL for applications / LinkedIn.
+Content (text, socials, projects, CV, photo) is editable at **`/admin`** without redeploying.
 
-## Move to a professional GitHub account (Phase B)
+1. Follow **[supabase/SETUP.md](supabase/SETUP.md)** to create the project, admin user, and run [`supabase/schema.sql`](supabase/schema.sql).
+2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` and in Vercel → Environment Variables.
+3. Open `/admin/login` with your admin email/password.
 
-Keep the **same Vercel project** so the production URL stays stable.
+Until Supabase is configured, the site uses static fallback content from `src/data/content.ts`.
 
-### Preferred: transfer the repository
+## Deploy on Vercel
 
-1. Create your professional GitHub account.
-2. On the school repo: **Settings → General → Danger Zone → Transfer ownership** → new account.
-3. In Vercel → Project → **Settings → Git**: reconnect the repo under the new GitHub identity if the link breaks.
-4. Update your local remote:
-
-```bash
-git remote set-url origin git@github.com:NEWUSER/REPO.git
-```
-
-5. Push a small commit and confirm Vercel rebuilds successfully.
-
-### Alternative: mirror to a new repo
-
-1. Create an empty repo on the professional account.
-2. Push all branches/tags to the new remote.
-3. In Vercel, point the project at the new repository (same Vercel project).
-4. Archive or privatize the school repo; leave a short README pointer if needed.
+1. Push to `andreyqzn/Quizon-Portfolio`.
+2. Ensure Vercel env vars for Supabase are set (Production + Preview).
+3. Framework: **Vite** · Build: `npm run build` · Output: `dist`.
+4. SPA routes (`/admin`) are covered by `vercel.json` rewrites.
 
 ## Project structure
 
 ```
 src/
-  components/     # Header, sections, ThemeToggle
-  data/content.ts # Copy, experience, projects, stack
-  hooks/useTheme.ts
+  components/        # Public UI + ProtectedRoute
+  context/           # AuthProvider
+  data/content.ts    # Static seed / fallback
+  hooks/             # useTheme, usePortfolioContent
+  lib/               # supabase client, uploads
+  pages/             # Portfolio, Admin login, Admin dashboard
+supabase/
+  schema.sql         # Tables, RLS, storage, seed
+  SETUP.md           # Dashboard setup checklist
 public/
-  assets/         # Photo, icons, project images
-  documents/      # Resume PDF
-  demos/          # Static demos (e.g. Dina's Mami House)
+  assets/ documents/ demos/
 ```
-
-Update portfolio copy and projects in `src/data/content.ts`. Replace `/public/assets/img/smart-queue-placeholder.svg` with real Smart Queue screenshots when ready, and add `liveUrl` / `repoUrl` in the projects data.

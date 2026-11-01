@@ -1,9 +1,13 @@
-import { education } from '../data/content'
+import type { EducationContent } from '../types/portfolio'
 import { EducationIcon } from './icons'
 import { Card } from './Card'
 import { SectionTitle } from './SectionTitle'
 
-export function Education() {
+type EducationProps = {
+  education: EducationContent
+}
+
+export function Education({ education }: EducationProps) {
   return (
     <Card className="md:col-span-5">
       <SectionTitle icon={<EducationIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
