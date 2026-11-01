@@ -1,16 +1,16 @@
-import { motion, useReducedMotion } from 'motion/react'
+import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react'
 import { useEffect, useState } from 'react'
 import type { Theme } from '../hooks/useTheme'
 import { GooeyFilterDefs } from './GooeyFilterDefs'
 import { ThemeToggle } from './ThemeToggle'
+import { cn } from '../lib/cn'
 
 export const THEME_TOGGLE_ANCHOR_ID = 'theme-toggle-anchor'
 
-const TOGGLE_SIZE = 56
-/** Soft clearance around the toggle before it starts dodging. */
-const CLEARANCE = 26
-const MAX_DODGE_X = 132
-const MAX_DODGE_Y = 96
+const TOGGLE_SIZE = 52
+const CLEARANCE = 22
+const MAX_DODGE_X = 140
+const MAX_DODGE_Y = 88
 
 type FloatingThemeToggleProps = {
   theme: Theme
@@ -20,7 +20,7 @@ type FloatingThemeToggleProps = {
 type Dodge = { x: number; y: number }
 
 function toggleInset() {
-  return window.matchMedia('(min-width: 768px)').matches ? 28 : 20
+  return window.matchMedia('(min-width: 768px)').matches ? 24 : 16
 }
 
 function prefersGooey() {
@@ -35,7 +35,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-/** Repulsion from nearby content so the toggle “oils away” instead of covering it. */
 function computeDodge(inset: number): Dodge {
   const homeLeft = window.innerWidth - inset - TOGGLE_SIZE
   const homeTop = inset
@@ -45,7 +44,6 @@ function computeDodge(inset: number): Dodge {
   let dx = 0
   let dy = 0
 
-  // A few passes so the final resting spot fully clears the content.
   for (let pass = 0; pass < 3; pass++) {
     const cx = homeLeft + TOGGLE_SIZE / 2 + dx
     const cy = homeTop + TOGGLE_SIZE / 2 + dy
@@ -75,14 +73,14 @@ function computeDodge(inset: number): Dodge {
       }
 
       if (dist < radius) {
-        const push = (radius - dist) * 1.15
+        const push = (radius - dist) * 1.1
         dx += (vx / dist) * push
         dy += (vy / dist) * push
       }
     }
 
-    dx = clamp(dx, -MAX_DODGE_X, 24)
-    dy = clamp(dy, -12, MAX_DODGE_Y)
+    dx = clamp(dx, -MAX_DODGE_X, 16)
+    dy = clamp(dy, -8, MAX_DODGE_Y)
   }
 
   return { x: dx, y: dy }
@@ -91,9 +89,14 @@ function computeDodge(inset: number): Dodge {
 export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProps) {
   const reduceMotion = useReducedMotion()
   const [ready, setReady] = useState(false)
-  const [inset, setInset] = useState(20)
+  const [inset, setInset] = useState(16)
   const [gooeyActive, setGooeyActive] = useState(false)
-  const [dodge, setDodge] = useState<Dodge>({ x: 0, y: 0 })
+  const [oil, setOil] = useState({ separating: false, stretchX: 0, stretchY: 0 })
+
+  const dodgeX = useMotionValue(0)
+  const dodgeY = useMotionValue(0)
+  const springX = useSpring(dodgeX, { stiffness: 360, damping: 30, mass: 0.55 })
+  const springY = useSpring(dodgeY, { stiffness: 360, damping: 30, mass: 0.55 })
 
   useEffect(() => {
     const sync = () => {
@@ -111,7 +114,9 @@ export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProp
 
   useEffect(() => {
     if (reduceMotion) {
-      setDodge({ x: 0, y: 0 })
+      dodgeX.set(0)
+      dodgeY.set(0)
+      setOil({ separating: false, stretchX: 0, stretchY: 0 })
       return
     }
 
@@ -119,9 +124,14 @@ export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProp
     const measure = () => {
       frame = 0
       const next = computeDodge(inset)
-      setDodge((prev) =>
-        Math.abs(prev.x - next.x) < 0.4 && Math.abs(prev.y - next.y) < 0.4 ? prev : next,
-      )
+      dodgeX.set(next.x)
+      dodgeY.set(next.y)
+      const mag = Math.hypot(next.x, next.y)
+      setOil({
+        separating: mag > 8,
+        stretchX: mag > 8 ? clamp(-next.x * 0.28, -14, 14) : 0,
+        stretchY: mag > 8 ? clamp(-next.y * 0.28, -14, 14) : 0,
+      })
     }
     const schedule = () => {
       if (frame) return
@@ -136,12 +146,7 @@ export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProp
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
-  }, [inset, reduceMotion])
-
-  const separating = Math.hypot(dodge.x, dodge.y) > 6
-  // Oil stretch points toward the obstacle (opposite of dodge travel).
-  const stretchX = separating ? clamp(-dodge.x * 0.35, -18, 18) : 0
-  const stretchY = separating ? clamp(-dodge.y * 0.35, -18, 18) : 0
+  }, [inset, reduceMotion, dodgeX, dodgeY])
 
   return (
     <>
@@ -149,23 +154,26 @@ export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProp
 
       <motion.div
         id={THEME_TOGGLE_ANCHOR_ID}
-        className="pointer-events-auto fixed z-50 h-14 w-14"
-        style={{ top: inset, right: inset }}
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.72 }}
+        className="pointer-events-auto fixed z-50"
+        style={{
+          top: inset,
+          right: inset,
+          width: TOGGLE_SIZE,
+          height: TOGGLE_SIZE,
+          x: reduceMotion ? 0 : springX,
+          y: reduceMotion ? 0 : springY,
+        }}
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.78 }}
         animate={{
           opacity: ready ? 1 : 0,
-          scale: ready ? 1 : 0.72,
-          x: reduceMotion ? 0 : dodge.x,
-          y: reduceMotion ? 0 : dodge.y,
+          scale: ready ? (oil.separating ? 0.94 : 1) : 0.78,
         }}
         transition={{
-          opacity: { duration: 0.35 },
-          scale: { type: 'spring', stiffness: 200, damping: 22, mass: 0.85 },
-          x: { type: 'spring', stiffness: 320, damping: 28, mass: 0.7 },
-          y: { type: 'spring', stiffness: 320, damping: 28, mass: 0.7 },
+          opacity: { duration: 0.3 },
+          scale: { type: 'spring', stiffness: 260, damping: 22, mass: 0.7 },
         }}
-        whileHover={reduceMotion ? undefined : { scale: 1.05 }}
-        whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+        whileHover={reduceMotion ? undefined : { scale: oil.separating ? 0.98 : 1.06 }}
+        whileTap={reduceMotion ? undefined : { scale: 0.94 }}
       >
         <div
           className="absolute inset-0"
@@ -177,27 +185,35 @@ export function FloatingThemeToggle({ theme, onToggle }: FloatingThemeToggleProp
               <span className="theme-toggle-blob theme-toggle-blob--core" />
               <span
                 className="theme-toggle-blob theme-toggle-blob--orbit"
-                data-separating={separating ? 'true' : undefined}
+                data-separating={oil.separating ? 'true' : undefined}
               />
               <span
                 className="theme-toggle-blob theme-toggle-blob--drip"
-                data-separating={separating ? 'true' : undefined}
+                data-separating={oil.separating ? 'true' : undefined}
                 style={
-                  separating
-                    ? { transform: `translate3d(${stretchX}px, ${stretchY}px, 0) scale(1.2)` }
+                  oil.separating
+                    ? {
+                        transform: `translate3d(${oil.stretchX}px, ${oil.stretchY}px, 0) scale(1.18)`,
+                      }
                     : undefined
                 }
               />
             </>
           ) : (
-            <span className="absolute inset-0 rounded-full border border-border/50 bg-page/55 shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md dark:bg-page/50 dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)]" />
+            <span
+              className={cn(
+                'absolute inset-0 rounded-full border border-border/40',
+                'bg-page/60 shadow-[0_6px_20px_rgba(0,0,0,0.07)] backdrop-blur-md',
+                'dark:bg-page/55 dark:shadow-[0_6px_20px_rgba(0,0,0,0.4)]',
+              )}
+            />
           )}
         </div>
 
         <ThemeToggle
           theme={theme}
           onToggle={onToggle}
-          className="relative z-10 h-14 w-14 border-0 bg-transparent text-primary shadow-none"
+          className="relative z-10 h-full w-full border-0 bg-transparent text-primary shadow-none"
         />
       </motion.div>
     </>

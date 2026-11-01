@@ -8,14 +8,14 @@ export function GooeyFilterDefs() {
       <defs>
         <filter
           id="gooey-oil-water"
-          x="-60%"
-          y="-60%"
-          width="220%"
-          height="220%"
+          x="-50%"
+          y="-50%"
+          width="200%"
+          height="200%"
           colorInterpolationFilters="sRGB"
           filterUnits="objectBoundingBox"
         >
-          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
           <feColorMatrix
             in="blur"
             mode="matrix"
@@ -23,7 +23,7 @@ export function GooeyFilterDefs() {
               1 0 0 0 0
               0 1 0 0 0
               0 0 1 0 0
-              0 0 0 19 -9
+              0 0 0 18 -8
             "
           />
         </filter>

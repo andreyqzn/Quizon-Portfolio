@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { IconPicker } from '../components/IconPicker'
 import { useAuth } from '../context/AuthContext'
 import { usePortfolioContent } from '../hooks/usePortfolioContent'
+import { fallbackContent } from '../data/content'
 import { getPublicAssetUrl, supabase } from '../lib/supabase'
-import { slugify, uploadPortfolioAsset } from '../lib/uploads'
+import { removePortfolioAsset, slugify, uploadPortfolioAsset } from '../lib/uploads'
 import type { ExperienceItem, ProjectItem, SocialLinkItem } from '../types/portfolio'
 
 type Tab =
@@ -398,8 +399,62 @@ export function AdminDashboardPage() {
     await refresh()
   }
 
-  const photoPreview = getPublicAssetUrl(photoPath) || content.profile.photoUrl
-  const resumePreview = getPublicAssetUrl(resumePath) || content.profile.resumeUrl
+  async function onPhotoRemove() {
+    if (!supabase || !photoPath) return
+    const ok = window.confirm(
+      'Remove the profile photo from storage and the database?\n\nThe site will fall back to the default placeholder photo.',
+    )
+    if (!ok) return
+
+    setSaving(true)
+    setError(null)
+    const removed = await removePortfolioAsset(photoPath)
+    if (removed.error) {
+      setError(removed.error)
+      setSaving(false)
+      return
+    }
+    const { error: err } = await supabase.from('profile').update({ photo_path: null }).eq('id', 1)
+    setSaving(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setPhotoPath(null)
+    setStatus('Photo removed — using default placeholder')
+    await refresh()
+  }
+
+  async function onResumeRemove() {
+    if (!supabase || !resumePath) return
+    const ok = window.confirm(
+      'Remove the resume PDF from storage and the database?\n\nThe site will fall back to the default placeholder resume.',
+    )
+    if (!ok) return
+
+    setSaving(true)
+    setError(null)
+    const removed = await removePortfolioAsset(resumePath)
+    if (removed.error) {
+      setError(removed.error)
+      setSaving(false)
+      return
+    }
+    const { error: err } = await supabase.from('profile').update({ resume_path: null }).eq('id', 1)
+    setSaving(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setResumePath(null)
+    setStatus('Resume removed — using default placeholder')
+    await refresh()
+  }
+
+  const photoPreview = getPublicAssetUrl(photoPath) || fallbackContent.profile.photoUrl
+  const resumePreview = getPublicAssetUrl(resumePath) || fallbackContent.profile.resumeUrl
+  const hasCustomPhoto = Boolean(photoPath)
+  const hasCustomResume = Boolean(resumePath)
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl bg-page px-4 py-8">
@@ -755,24 +810,61 @@ export function AdminDashboardPage() {
           <div>
             <h2 className="mb-2 text-base font-medium text-primary">Profile photo</h2>
             <img src={photoPreview} alt="Profile preview" className="mb-3 h-32 w-32 rounded-lg object-cover" />
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => void onPhotoChange(e.target.files?.[0] ?? null)}
-            />
-            <p className="mt-1 text-xs text-muted">JPEG/PNG/WebP, max 2MB. Stored at photo/profile.*</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={saving}
+                onChange={(e) => void onPhotoChange(e.target.files?.[0] ?? null)}
+              />
+              {hasCustomPhoto ? (
+                <button
+                  type="button"
+                  className={btnGhost}
+                  disabled={saving}
+                  onClick={() => void onPhotoRemove()}
+                >
+                  Remove photo
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              JPEG/PNG/WebP, max 2MB. Stored at photo/profile.*
+              {!hasCustomPhoto ? ' · Showing default placeholder' : ''}
+            </p>
           </div>
           <div>
             <h2 className="mb-2 text-base font-medium text-primary">Resume (PDF)</h2>
-            <a href={resumePreview} target="_blank" rel="noopener noreferrer" className="mb-3 inline-block text-sm text-primary underline">
-              Current resume
+            <a
+              href={resumePreview}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-3 inline-block text-sm text-primary underline"
+            >
+              {hasCustomResume ? 'Current resume' : 'Default resume placeholder'}
             </a>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => void onResumeChange(e.target.files?.[0] ?? null)}
-            />
-            <p className="mt-1 text-xs text-muted">PDF only, max 5MB. Stored at resume/cv.pdf</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="file"
+                accept="application/pdf"
+                disabled={saving}
+                onChange={(e) => void onResumeChange(e.target.files?.[0] ?? null)}
+              />
+              {hasCustomResume ? (
+                <button
+                  type="button"
+                  className={btnGhost}
+                  disabled={saving}
+                  onClick={() => void onResumeRemove()}
+                >
+                  Remove resume
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              PDF only, max 5MB. Stored at resume/cv.pdf
+              {!hasCustomResume ? ' · Showing default placeholder' : ''}
+            </p>
           </div>
         </div>
       )}
