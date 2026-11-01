@@ -4,3 +4,4 @@
   "outputDirectory": "dist",
   "rewrites": [{ "source": "/((?!assets|documents|demos|favicon.svg|icons.svg).*)", "destination": "/index.html" }]
 }
+

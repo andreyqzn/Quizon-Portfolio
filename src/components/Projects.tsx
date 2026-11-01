@@ -1,6 +1,8 @@
+import { ArrowUpRight, LayoutGrid } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { ProjectItem } from '../types/portfolio'
-import { ProjectsIcon } from './icons'
-import { Card } from './Card'
+import { cn } from '../lib/cn'
+import { Reveal } from './Reveal'
 import { SectionTitle } from './SectionTitle'
 
 type ProjectsProps = {
@@ -8,66 +10,83 @@ type ProjectsProps = {
 }
 
 export function Projects({ projects }: ProjectsProps) {
-  return (
-    <Card className="md:col-span-8">
-      <SectionTitle icon={<ProjectsIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
-        Projects
-      </SectionTitle>
+  const reduceMotion = useReducedMotion()
 
-      <div className="mt-2.5 flex flex-col gap-1.5">
-        {projects.map((project) => (
-          <article
-            key={project.id}
-            className="relative flex min-h-[200px] items-end overflow-hidden rounded-[10px] border border-border bg-cover bg-center"
-            style={{ backgroundImage: `url('${project.image}')` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-black/10" />
-            <div className="relative z-10 p-[15px]">
-              <p className="w-max rounded-[3px] bg-label px-1.5 py-0.5 text-xs text-primary italic dark:text-white">
-                {project.subtitle}
-              </p>
-              <h3 className="mt-1 text-base text-white">{project.title}</h3>
-              <p className="scrollbar-none mt-1 max-h-[60px] overflow-y-auto text-xs text-white/75 md:text-sm">
-                {project.description}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {project.tech.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded border border-white/40 px-1.5 py-0.5 text-[10px] text-white/90"
-                  >
-                    {item}
-                  </span>
-                ))}
+  return (
+    <Reveal as="section" className="border-t border-border py-16 md:py-20">
+      <SectionTitle icon={LayoutGrid}>Projects</SectionTitle>
+
+      <div className="flex flex-col gap-8 md:gap-10">
+        {projects.map((project, index) => (
+          <Reveal key={project.id} as="article" delay={index * 0.06}>
+            <motion.div
+              className="group relative overflow-hidden rounded-2xl border border-border"
+              whileHover={reduceMotion ? undefined : { y: -2 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <div className="relative aspect-[16/10] overflow-hidden bg-subtle md:aspect-[21/9]">
+                <img
+                  src={project.image}
+                  alt=""
+                  className={cn(
+                    'h-full w-full object-cover transition-transform duration-700 ease-out',
+                    'group-hover:scale-[1.03]',
+                  )}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+                <div className="absolute inset-x-0 bottom-0 z-10 p-5 md:p-8">
+                  <p className="text-xs tracking-[0.12em] text-white/70 uppercase">{project.subtitle}</p>
+                  <h3 className="mt-2 font-display text-2xl tracking-tight text-white md:text-4xl">
+                    {project.title}
+                  </h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
+                    {project.description}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {project.tech.map((item) => (
+                      <span
+                        key={item}
+                        className="border border-white/25 px-2.5 py-1 text-[11px] tracking-wide text-white/85"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-5 text-sm text-white">
+                    {project.liveUrl ? (
+                      <a
+                        href={project.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                      >
+                        Live demo
+                        <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+                      </a>
+                    ) : null}
+                    {project.repoUrl ? (
+                      <a
+                        href={project.repoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                      >
+                        Source
+                        <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+                      </a>
+                    ) : (
+                      <span className="text-white/55">Demo & repo links coming soon</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="mt-2 flex flex-wrap gap-3 text-xs text-white">
-                {project.liveUrl ? (
-                  <a
-                    href={project.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline-offset-2 hover:underline"
-                  >
-                    Live demo
-                  </a>
-                ) : null}
-                {project.repoUrl ? (
-                  <a
-                    href={project.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline-offset-2 hover:underline"
-                  >
-                    Source
-                  </a>
-                ) : (
-                  <span className="text-white/60">Demo & repo links coming soon</span>
-                )}
-              </div>
-            </div>
-          </article>
+            </motion.div>
+          </Reveal>
         ))}
       </div>
-    </Card>
+    </Reveal>
   )
 }

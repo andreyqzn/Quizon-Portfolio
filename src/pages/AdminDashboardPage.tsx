@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { IconPicker } from '../components/IconPicker'
 import { useAuth } from '../context/AuthContext'
 import { usePortfolioContent } from '../hooks/usePortfolioContent'
 import { getPublicAssetUrl, supabase } from '../lib/supabase'
 import { slugify, uploadPortfolioAsset } from '../lib/uploads'
-import type { ExperienceItem, ProjectItem } from '../types/portfolio'
+import type { ExperienceItem, ProjectItem, SocialLinkItem } from '../types/portfolio'
 
 type Tab =
   | 'profile'
@@ -14,6 +15,7 @@ type Tab =
   | 'tech'
   | 'beyond'
   | 'projects'
+  | 'socials'
   | 'assets'
 
 const tabs: { id: Tab; label: string }[] = [
@@ -24,6 +26,7 @@ const tabs: { id: Tab; label: string }[] = [
   { id: 'tech', label: 'Tech stack' },
   { id: 'beyond', label: 'Beyond' },
   { id: 'projects', label: 'Projects' },
+  { id: 'socials', label: 'Socials page' },
   { id: 'assets', label: 'Assets' },
 ]
 
@@ -48,9 +51,7 @@ export function AdminDashboardPage() {
   const [role, setRole] = useState('')
   const [location, setLocation] = useState('')
   const [email, setEmail] = useState('')
-  const [instagram, setInstagram] = useState('')
-  const [github, setGithub] = useState('')
-  const [linkedin, setLinkedin] = useState('')
+  const [connectLinks, setConnectLinks] = useState<SocialLinkItem[]>([])
 
   // About / beyond / education / tech
   const [aboutText, setAboutText] = useState('')
@@ -62,9 +63,11 @@ export function AdminDashboardPage() {
   const [backend, setBackend] = useState('')
   const [tools, setTools] = useState('')
 
-  // Experience / projects
+  // Experience / projects / socials page
   const [experience, setExperience] = useState<ExperienceItem[]>([])
   const [projects, setProjects] = useState<ProjectItem[]>([])
+  const [socialsDisplayName, setSocialsDisplayName] = useState('Heiz')
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>([])
 
   // Asset paths from DB (not resolved URLs)
   const [photoPath, setPhotoPath] = useState<string | null>(null)
@@ -75,9 +78,7 @@ export function AdminDashboardPage() {
     setRole(content.profile.role)
     setLocation(content.profile.location)
     setEmail(content.profile.email)
-    setInstagram(content.profile.socials.instagram)
-    setGithub(content.profile.socials.github)
-    setLinkedin(content.profile.socials.linkedin)
+    setConnectLinks(content.connectLinks)
     setAboutText(content.about.paragraphs.join('\n\n'))
     setBeyond(content.beyondCoding)
     setDegree(content.education.degree)
@@ -88,6 +89,8 @@ export function AdminDashboardPage() {
     setTools(content.techStack.tools.join(', '))
     setExperience(content.experience)
     setProjects(content.projects)
+    setSocialsDisplayName(content.socialsPage.displayName)
+    setSocialLinks(content.socialsPage.links)
   }, [content])
 
   useEffect(() => {
@@ -140,11 +143,61 @@ export function AdminDashboardPage() {
         role,
         location,
         email,
-        instagram_url: instagram,
-        github_url: github,
-        linkedin_url: linkedin,
       })
       if (err) throw err
+
+      const { error: clearErr } = await supabase!
+        .from('connect_links')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+      if (clearErr) throw clearErr
+
+      const rows = connectLinks
+        .map((link, index) => ({
+          label: link.label.trim(),
+          handle: link.handle.trim(),
+          url: link.url.trim(),
+          icon_slug: (link.iconSlug || 'link').trim().toLowerCase() || 'link',
+          sort_order: index,
+        }))
+        .filter((link) => link.label && link.url)
+
+      if (rows.length > 0) {
+        const { error: insertErr } = await supabase!.from('connect_links').insert(rows)
+        if (insertErr) throw insertErr
+      }
+    })
+  }
+
+  async function saveSocialsPage(e: FormEvent) {
+    e.preventDefault()
+    await withSave(async () => {
+      const { error: pageErr } = await supabase!.from('socials_page').upsert({
+        id: 1,
+        display_name: socialsDisplayName.trim() || 'Heiz',
+      })
+      if (pageErr) throw pageErr
+
+      const { error: clearErr } = await supabase!
+        .from('social_links')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+      if (clearErr) throw clearErr
+
+      const rows = socialLinks
+        .map((link, index) => ({
+          label: link.label.trim(),
+          handle: link.handle.trim(),
+          url: link.url.trim(),
+          icon_slug: (link.iconSlug || 'link').trim().toLowerCase() || 'link',
+          sort_order: index,
+        }))
+        .filter((link) => link.label && link.url)
+
+      if (rows.length > 0) {
+        const { error: insertErr } = await supabase!.from('social_links').insert(rows)
+        if (insertErr) throw insertErr
+      }
     })
   }
 
@@ -390,14 +443,69 @@ export function AdminDashboardPage() {
       )}
 
       {tab === 'profile' && (
-        <form className="space-y-3 rounded-[10px] border border-border bg-card p-4" onSubmit={saveProfile}>
+        <form className="space-y-4 rounded-[10px] border border-border bg-card p-4" onSubmit={saveProfile}>
           <label className={labelClass}>Name<input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className={labelClass}>Role<input className={inputClass} value={role} onChange={(e) => setRole(e.target.value)} /></label>
           <label className={labelClass}>Location<input className={inputClass} value={location} onChange={(e) => setLocation(e.target.value)} /></label>
           <label className={labelClass}>Email<input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-          <label className={labelClass}>Instagram URL<input className={inputClass} value={instagram} onChange={(e) => setInstagram(e.target.value)} /></label>
-          <label className={labelClass}>GitHub URL<input className={inputClass} value={github} onChange={(e) => setGithub(e.target.value)} /></label>
-          <label className={labelClass}>LinkedIn URL<input className={inputClass} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} /></label>
+
+          <div className="space-y-3 border-t border-border pt-4">
+            <h2 className="text-base font-medium text-primary">Connect links</h2>
+            <p className="text-sm text-muted">Shown on the portfolio Connect section (email above is always included).</p>
+            {connectLinks.map((link, index) => (
+              <div key={link.id ?? index} className="grid gap-2 rounded-lg border border-border p-3">
+                <input
+                  className={inputClass}
+                  placeholder="Label (e.g. Instagram)"
+                  value={link.label}
+                  onChange={(e) => {
+                    const next = [...connectLinks]
+                    next[index] = { ...link, label: e.target.value }
+                    setConnectLinks(next)
+                  }}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="URL"
+                  value={link.url}
+                  onChange={(e) => {
+                    const next = [...connectLinks]
+                    next[index] = { ...link, url: e.target.value }
+                    setConnectLinks(next)
+                  }}
+                />
+                <div>
+                  <p className="mb-1 text-xs text-muted">Icon</p>
+                  <IconPicker
+                    value={link.iconSlug || 'link'}
+                    onChange={(slug) => {
+                      const next = [...connectLinks]
+                      next[index] = { ...link, iconSlug: slug }
+                      setConnectLinks(next)
+                    }}
+                    inputClassName={inputClass}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={btnGhost}
+                  onClick={() => setConnectLinks(connectLinks.filter((_, i) => i !== index))}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() =>
+                setConnectLinks([...connectLinks, { label: '', handle: '', url: '', iconSlug: 'link' }])
+              }
+            >
+              Add Connect link
+            </button>
+          </div>
+
           <button className={btnClass} disabled={saving} type="submit">Save profile</button>
         </form>
       )}
@@ -557,6 +665,88 @@ export function AdminDashboardPage() {
             Add project
           </button>
           <button className={btnClass} disabled={saving} type="submit">Save projects</button>
+        </form>
+      )}
+
+      {tab === 'socials' && (
+        <form className="space-y-4 rounded-[10px] border border-border bg-card p-4" onSubmit={saveSocialsPage}>
+          <p className="text-sm text-muted">
+            Controls the public <code className="text-primary">/socials</code> page only. Portfolio Connect links stay in Profile.
+          </p>
+          <label className={labelClass}>
+            Display name
+            <input
+              className={inputClass}
+              value={socialsDisplayName}
+              onChange={(e) => setSocialsDisplayName(e.target.value)}
+              placeholder="Heiz"
+            />
+          </label>
+          {socialLinks.map((link, index) => (
+            <div key={link.id ?? index} className="grid gap-2 rounded-lg border border-border p-3">
+              <input
+                className={inputClass}
+                placeholder="Label (e.g. Instagram)"
+                value={link.label}
+                onChange={(e) => {
+                  const next = [...socialLinks]
+                  next[index] = { ...link, label: e.target.value }
+                  setSocialLinks(next)
+                }}
+              />
+              <input
+                className={inputClass}
+                placeholder="Handle (e.g. @heizzzx)"
+                value={link.handle}
+                onChange={(e) => {
+                  const next = [...socialLinks]
+                  next[index] = { ...link, handle: e.target.value }
+                  setSocialLinks(next)
+                }}
+              />
+              <input
+                className={inputClass}
+                placeholder="URL"
+                value={link.url}
+                onChange={(e) => {
+                  const next = [...socialLinks]
+                  next[index] = { ...link, url: e.target.value }
+                  setSocialLinks(next)
+                }}
+              />
+              <div>
+                <p className="mb-1 text-xs text-muted">Icon (Simple Icons)</p>
+                <IconPicker
+                  value={link.iconSlug || 'link'}
+                  onChange={(slug) => {
+                    const next = [...socialLinks]
+                    next[index] = { ...link, iconSlug: slug }
+                    setSocialLinks(next)
+                  }}
+                  inputClassName={inputClass}
+                />
+              </div>
+              <button
+                type="button"
+                className={btnGhost}
+                onClick={() => setSocialLinks(socialLinks.filter((_, i) => i !== index))}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className={btnGhost}
+            onClick={() =>
+              setSocialLinks([...socialLinks, { label: '', handle: '', url: '', iconSlug: 'instagram' }])
+            }
+          >
+            Add social link
+          </button>
+          <button className={btnClass} disabled={saving} type="submit">
+            Save socials page
+          </button>
         </form>
       )}
 

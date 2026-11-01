@@ -1,20 +1,50 @@
-import { MoonIcon, SunIcon } from './icons'
+import { Moon, Sun } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { Theme } from '../hooks/useTheme'
+import { cn } from '../lib/cn'
 
 type ThemeToggleProps = {
   theme: Theme
-  onToggle: () => void
+  onToggle: (origin: { x: number; y: number }) => void
+  className?: string
 }
 
-export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle({ theme, onToggle, className }: ThemeToggleProps) {
+  const reduceMotion = useReducedMotion()
+
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect()
+        onToggle({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        })
+      }}
       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-primary transition-transform duration-300 hover:[transform:perspective(500px)_translateZ(12px)] md:h-8 md:w-8"
+      className={cn(
+        'inline-flex h-11 w-11 items-center justify-center rounded-full text-primary',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        className,
+      )}
     >
-      {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={theme}
+          initial={reduceMotion ? false : { opacity: 0, rotate: -90, scale: 0.6 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0, rotate: 90, scale: 0.6 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 24, mass: 0.7 }}
+          className="inline-flex"
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+          ) : (
+            <Moon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+          )}
+        </motion.span>
+      </AnimatePresence>
     </button>
   )
 }

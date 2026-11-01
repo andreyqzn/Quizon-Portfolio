@@ -1,59 +1,53 @@
-import type { ProfileContent } from '../types/portfolio'
-import { ConnectIcon, GithubIcon, InstagramIcon, LinkedinIcon } from './icons'
-import { Card } from './Card'
+import { Link2, Mail } from 'lucide-react'
+import type { ProfileContent, SocialLinkItem } from '../types/portfolio'
+import { BrandIcon } from './BrandIcon'
+import { cn } from '../lib/cn'
+import { Reveal } from './Reveal'
 import { SectionTitle } from './SectionTitle'
 
 type ConnectProps = {
   profile: ProfileContent
+  links: SocialLinkItem[]
 }
 
-export function Connect({ profile }: ConnectProps) {
+export function Connect({ profile, links }: ConnectProps) {
   return (
-    <Card className="md:col-span-8">
-      <SectionTitle icon={<ConnectIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
-        Connect
-      </SectionTitle>
+    <Reveal as="section" className="border-t border-border py-16 md:py-20">
+      <SectionTitle icon={Link2}>Connect</SectionTitle>
 
       <a
         href={`mailto:${profile.email}`}
-        className="mt-4 block cursor-pointer rounded-[10px] bg-well px-5 py-2.5 transition-colors duration-300 hover:opacity-80"
+        className={cn(
+          'group inline-flex min-h-11 items-center gap-3 text-primary',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        )}
       >
-        <p className="m-0 text-xs text-muted">Email</p>
-        <span className="text-sm text-primary md:text-base">{profile.email}</span>
+        <Mail className="h-4 w-4 text-muted transition-colors group-hover:text-primary" strokeWidth={1.5} />
+        <span className="text-lg tracking-tight underline-offset-4 group-hover:underline md:text-2xl">
+          {profile.email}
+        </span>
       </a>
 
-      <div className="mt-2.5 flex flex-col gap-2.5">
-        <p className="mt-2.5 text-xs text-muted">Social Links</p>
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href={profile.socials.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Instagram"
-            className="flex items-center justify-center rounded-[10px] bg-well p-2 text-primary transition-colors duration-300 hover:opacity-80"
-          >
-            <InstagramIcon className="h-4 w-4" />
-          </a>
-          <a
-            href={profile.socials.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub"
-            className="flex items-center justify-center rounded-[10px] bg-well p-2 text-primary transition-colors duration-300 hover:opacity-80"
-          >
-            <GithubIcon className="h-4 w-4" />
-          </a>
-          <a
-            href={profile.socials.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn"
-            className="flex items-center justify-center rounded-[10px] bg-well p-2 text-primary transition-colors duration-300 hover:opacity-80"
-          >
-            <LinkedinIcon className="h-4 w-4" />
-          </a>
+      {links.length > 0 ? (
+        <div className="mt-10 flex flex-wrap gap-3">
+          {links.map((link) => (
+            <a
+              key={link.id ?? `${link.label}-${link.url}`}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={link.label}
+              className={cn(
+                'inline-flex h-11 items-center gap-2 rounded-full border border-border px-5 text-sm text-primary',
+                'hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              )}
+            >
+              <BrandIcon slug={link.iconSlug} />
+              {link.label}
+            </a>
+          ))}
         </div>
-      </div>
-    </Card>
+      ) : null}
+    </Reveal>
   )
 }

@@ -1,47 +1,79 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/instrument-sans';
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource/instrument-serif/400-italic.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
 
   --color-page: var(--page);
-  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-card: var(--surface);
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-muted: var(--muted);
   --color-cta: var(--cta);
   --color-cta-text: var(--cta-text);
-  --color-well: var(--well);
+  --color-subtle: var(--subtle);
+  --color-well: var(--subtle);
   --color-chip-border: var(--chip-border);
   --color-label: var(--label);
+  --color-overlay: var(--overlay);
 }
 
 :root {
-  --page: #f5f5f5;
-  --card: #ffffff;
-  --border: #d4d4d4;
-  --primary: #171717;
-  --muted: #737373;
-  --cta: #171717;
-  --cta-text: #ffffff;
-  --well: #f5f5f5;
-  --chip-border: #171717;
-  --label: #e5e5e5;
+  --page: #e8e8eb;
+  --surface: #f4f4f6;
+  --border: #d6d6db;
+  --primary: #0a0a0a;
+  --muted: #6b6b73;
+  --cta: #0a0a0a;
+  --cta-text: #fafafa;
+  --subtle: #ededf0;
+  --chip-border: #c8c8ce;
+  --label: #dcdce1;
+  --overlay: rgba(10, 10, 10, 0.72);
+  /* Soft gray liquid + sunlight caustics (text stays #0a0a0a) */
+  --fluid-base: rgba(160, 160, 168, 0.35);
+  --fluid-deep: rgba(95, 95, 105, 0.42);
+  --fluid-mid: rgba(125, 125, 135, 0.34);
+  --fluid-soft: rgba(145, 145, 155, 0.28);
+  --fluid-sheen: rgba(255, 255, 255, 0.85);
+  --fluid-sun: rgba(255, 255, 255, 0.55);
+  --fluid-glow: rgba(210, 215, 230, 0.4);
+  --fluid-warm: rgba(200, 185, 165, 0.28);
+  --fluid-noise-opacity: 0.07;
+  --fluid-sheen-opacity-a: 0.55;
+  --fluid-sheen-opacity-b: 0.42;
 }
 
 .dark {
-  --page: #111111;
-  --card: #262626;
-  --border: #737373;
-  --primary: #f8f8f8;
+  --page: #0a0a0a;
+  --surface: #141414;
+  --border: #2a2a2a;
+  --primary: #f5f5f5;
   --muted: #a3a3a3;
-  --cta: #ffffff;
-  --cta-text: #171717;
-  --well: #111111;
-  --chip-border: #ffffff;
-  --label: #464646;
+  --cta: #f5f5f5;
+  --cta-text: #0a0a0a;
+  --subtle: #171717;
+  --chip-border: #3a3a3a;
+  --label: #262626;
+  --overlay: rgba(0, 0, 0, 0.78);
+  /* Liquid metal + sunlight shafts */
+  --fluid-base: rgba(255, 255, 255, 0.04);
+  --fluid-deep: rgba(255, 255, 255, 0.14);
+  --fluid-mid: rgba(200, 215, 235, 0.1);
+  --fluid-soft: rgba(255, 255, 255, 0.07);
+  --fluid-sheen: rgba(255, 255, 255, 0.28);
+  --fluid-sun: rgba(255, 245, 230, 0.14);
+  --fluid-glow: rgba(140, 170, 220, 0.12);
+  --fluid-warm: rgba(210, 165, 120, 0.1);
+  --fluid-noise-opacity: 0.06;
+  --fluid-sheen-opacity-a: 0.4;
+  --fluid-sheen-opacity-b: 0.32;
 }
 
 * {
@@ -50,6 +82,13 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 body {
@@ -58,11 +97,136 @@ body {
   background-color: var(--page);
   color: var(--primary);
   font-family: var(--font-sans);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-feature-settings: 'ss01' on, 'cv11' on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease;
+  scrollbar-width: none;
+}
+
+/* Pre-React boot splash (removed by PageLoader) */
+#boot-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--page);
+  color: var(--primary);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#boot-loader[data-ready='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boot-loader__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.boot-loader__line {
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--primary);
+  transform-origin: center;
+  animation: boot-pulse 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.boot-loader__label {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@keyframes boot-pulse {
+  0%,
+  100% {
+    transform: scaleX(0.35);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-loader__line {
+    animation: none;
+    opacity: 0.7;
+    transform: scaleX(1);
+  }
+}
+
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 #root {
   min-height: 100vh;
+  /* Keep negative-z fluid layer above body paint, under page content */
+  isolation: isolate;
+  position: relative;
+}
+
+::selection {
+  background-color: var(--primary);
+  color: var(--page);
+}
+
+a,
+button,
+section,
+article,
+header,
+footer,
+hr,
+span,
+p,
+h1,
+h2,
+h3,
+h4 {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body,
+  a,
+  button,
+  section,
+  article,
+  header,
+  footer,
+  hr,
+  span,
+  p,
+  h1,
+  h2,
+  h3,
+  h4 {
+    transition: none !important;
+  }
 }
 
 .scrollbar-none {
@@ -71,4 +235,378 @@ body {
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Circular “water wave” theme reveal from the toggle */
+html[data-theme-wave='true']::view-transition-old(root),
+html[data-theme-wave='true']::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-theme-wave='true']::view-transition-old(root) {
+  z-index: 1;
+}
+
+html[data-theme-wave='true']::view-transition-new(root) {
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-wave='true']::view-transition-old(root),
+  html[data-theme-wave='true']::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* Theme toggle — local oil/water blobs (merged by SVG gooey filter) */
+.theme-toggle-blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--page) 72%, var(--primary) 28%);
+  transition: background 0.45s ease;
+}
+
+.theme-toggle-blob--core {
+  inset: 0;
+  border-radius: 40%;
+}
+
+.theme-toggle-blob--orbit {
+  top: -14%;
+  right: -10%;
+  width: 58%;
+  height: 58%;
+  animation: theme-toggle-orbit 4.5s ease-in-out infinite;
+}
+
+.theme-toggle-blob--drip {
+  bottom: -12%;
+  left: 18%;
+  width: 46%;
+  height: 46%;
+  animation: theme-toggle-drip 3.8s ease-in-out infinite;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Pause idle drip while oil-separating toward nearby content */
+.theme-toggle-blob--orbit[data-separating='true'],
+.theme-toggle-blob--drip[data-separating='true'] {
+  animation-play-state: paused;
+}
+
+@keyframes theme-toggle-orbit {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-18%, 22%, 0) scale(1.12);
+  }
+}
+
+@keyframes theme-toggle-drip {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(20%, -16%, 0) scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-blob--orbit,
+  .theme-toggle-blob--drip {
+    animation: none;
+  }
+}
+
+/* Liquid sunlight background — organic shapes, transform-only */
+.fluid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, var(--fluid-base), transparent 65%);
+  transition: background 0.45s ease;
+}
+
+.fluid-bg__layer {
+  position: absolute;
+  transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  backface-visibility: hidden;
+  transition:
+    background 0.45s ease,
+    opacity 0.45s ease;
+}
+
+/* Asymmetric “liquid blob” radii */
+.fluid-bg__blob--1 {
+  top: -22%;
+  left: -28%;
+  width: 85vmax;
+  height: 70vmax;
+  border-radius: 58% 42% 48% 52% / 48% 55% 45% 52%;
+  background:
+    radial-gradient(ellipse 55% 50% at 38% 42%, var(--fluid-deep), transparent 68%),
+    radial-gradient(ellipse 40% 45% at 68% 62%, var(--fluid-mid), transparent 70%);
+  opacity: 0.95;
+  animation: fluid-morph-a 24s ease-in-out infinite;
+}
+
+.fluid-bg__blob--2 {
+  top: 12%;
+  right: -32%;
+  width: 90vmax;
+  height: 75vmax;
+  border-radius: 42% 58% 55% 45% / 52% 40% 60% 48%;
+  background:
+    radial-gradient(ellipse 50% 48% at 55% 40%, var(--fluid-mid), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 30% 70%, var(--fluid-soft), transparent 72%);
+  opacity: 0.9;
+  animation: fluid-morph-b 30s ease-in-out infinite;
+}
+
+.fluid-bg__blob--3 {
+  bottom: -30%;
+  left: 8%;
+  width: 80vmax;
+  height: 65vmax;
+  border-radius: 48% 52% 40% 60% / 55% 45% 55% 45%;
+  background:
+    radial-gradient(ellipse 52% 48% at 48% 45%, var(--fluid-soft), transparent 68%),
+    radial-gradient(ellipse 35% 40% at 72% 30%, var(--fluid-warm), transparent 70%);
+  opacity: 0.88;
+  animation: fluid-morph-c 20s ease-in-out infinite;
+}
+
+.fluid-bg__caustic {
+  top: 5%;
+  left: 15%;
+  width: 65vmax;
+  height: 50vmax;
+  border-radius: 60% 40% 55% 45% / 45% 60% 40% 55%;
+  background: radial-gradient(ellipse 50% 45% at 50% 50%, var(--fluid-glow), transparent 68%);
+  opacity: 0.85;
+  animation: fluid-morph-b 34s ease-in-out infinite reverse;
+}
+
+.fluid-bg__warm {
+  bottom: 0;
+  right: 5%;
+  width: 55vmax;
+  height: 45vmax;
+  border-radius: 45% 55% 50% 50% / 60% 40% 60% 40%;
+  background: radial-gradient(ellipse 55% 50% at 50% 50%, var(--fluid-warm), transparent 70%);
+  opacity: 0.8;
+  animation: fluid-morph-a 28s ease-in-out infinite reverse;
+}
+
+/* Diagonal sunlight shafts */
+.fluid-bg__sun--1 {
+  top: -20%;
+  left: -10%;
+  width: 55vmax;
+  height: 140vmax;
+  border-radius: 40%;
+  background: linear-gradient(
+    108deg,
+    transparent 0%,
+    transparent 42%,
+    var(--fluid-sun) 49%,
+    transparent 56%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  transform-origin: top center;
+  animation: fluid-sun-a 22s ease-in-out infinite;
+}
+
+.fluid-bg__sun--2 {
+  top: -25%;
+  right: 5%;
+  width: 40vmax;
+  height: 130vmax;
+  border-radius: 40%;
+  background: linear-gradient(
+    98deg,
+    transparent 0%,
+    transparent 44%,
+    var(--fluid-sun) 50%,
+    transparent 56%,
+    transparent 100%
+  );
+  opacity: 0.4;
+  transform-origin: top center;
+  animation: fluid-sun-b 28s ease-in-out infinite;
+}
+
+/* Specular liquid ridges */
+.fluid-bg__sheen--1 {
+  top: 8%;
+  left: -12%;
+  width: 75vmax;
+  height: 32vmax;
+  border-radius: 50% 50% 45% 55% / 40% 60% 40% 60%;
+  background: linear-gradient(
+    118deg,
+    transparent 36%,
+    var(--fluid-sheen) 49%,
+    transparent 62%
+  );
+  opacity: var(--fluid-sheen-opacity-a);
+  animation: fluid-sheen-a 18s ease-in-out infinite;
+}
+
+.fluid-bg__sheen--2 {
+  bottom: 15%;
+  right: -18%;
+  width: 70vmax;
+  height: 26vmax;
+  border-radius: 55% 45% 50% 50% / 50% 50% 45% 55%;
+  background: linear-gradient(
+    -32deg,
+    transparent 38%,
+    var(--fluid-sheen) 50%,
+    transparent 62%
+  );
+  opacity: var(--fluid-sheen-opacity-b);
+  animation: fluid-sheen-b 22s ease-in-out infinite;
+}
+
+.fluid-bg__noise {
+  position: absolute;
+  inset: 0;
+  opacity: var(--fluid-noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: overlay;
+  transition: opacity 0.45s ease;
+}
+
+.fluid-bg[data-paused='true'] .fluid-bg__layer {
+  animation-play-state: paused;
+}
+
+@keyframes fluid-morph-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(-6deg);
+  }
+  33% {
+    transform: translate3d(7%, 9%, 0) scale(1.08) rotate(5deg);
+  }
+  66% {
+    transform: translate3d(-5%, 5%, 0) scale(0.94) rotate(-12deg);
+  }
+}
+
+@keyframes fluid-morph-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(10deg);
+  }
+  40% {
+    transform: translate3d(-9%, -7%, 0) scale(1.06) rotate(0deg);
+  }
+  70% {
+    transform: translate3d(-3%, 8%, 0) scale(0.95) rotate(16deg);
+  }
+}
+
+@keyframes fluid-morph-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(-3deg);
+  }
+  25% {
+    transform: translate3d(6%, -8%, 0) scale(1.07) rotate(7deg);
+  }
+  55% {
+    transform: translate3d(-8%, -3%, 0) scale(0.96) rotate(-10deg);
+  }
+  80% {
+    transform: translate3d(4%, 4%, 0) scale(1.03) rotate(2deg);
+  }
+}
+
+@keyframes fluid-sun-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(8deg) scaleX(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) rotate(14deg) scaleX(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes fluid-sun-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-4deg) scaleX(1);
+    opacity: 0.32;
+  }
+  50% {
+    transform: translate3d(-3%, 4%, 0) rotate(2deg) scaleX(1.12);
+    opacity: 0.55;
+  }
+}
+
+@keyframes fluid-sheen-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-8deg) scale(1);
+    opacity: var(--fluid-sheen-opacity-a);
+  }
+  50% {
+    transform: translate3d(5%, 7%, 0) rotate(6deg) scale(1.05);
+    opacity: calc(var(--fluid-sheen-opacity-a) + 0.16);
+  }
+}
+
+@keyframes fluid-sheen-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(12deg) scale(1);
+    opacity: var(--fluid-sheen-opacity-b);
+  }
+  50% {
+    transform: translate3d(-6%, -4%, 0) rotate(-2deg) scale(1.06);
+    opacity: calc(var(--fluid-sheen-opacity-b) + 0.14);
+  }
+}
+
+@media (max-width: 767px) {
+  .fluid-bg__blob--3,
+  .fluid-bg__warm,
+  .fluid-bg__sun--2,
+  .fluid-bg__sheen--2 {
+    display: none;
+  }
+
+  .fluid-bg__sun--1 {
+    opacity: 0.35;
+  }
+
+  .fluid-bg__noise {
+    opacity: calc(var(--fluid-noise-opacity) * 0.65);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluid-bg__layer {
+    animation: none !important;
+  }
 }

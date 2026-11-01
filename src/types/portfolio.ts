@@ -46,6 +46,20 @@ export type ProjectItem = {
   sortOrder?: number
 }
 
+export type SocialLinkItem = {
+  id?: string
+  label: string
+  handle: string
+  url: string
+  iconSlug: string
+  sortOrder?: number
+}
+
+export type SocialsPageContent = {
+  displayName: string
+  links: SocialLinkItem[]
+}
+
 export type PortfolioContent = {
   profile: ProfileContent
   about: { paragraphs: string[] }
@@ -54,4 +68,6 @@ export type PortfolioContent = {
   techStack: TechStackContent
   beyondCoding: string
   projects: ProjectItem[]
+  socialsPage: SocialsPageContent
+  connectLinks: SocialLinkItem[]
 }

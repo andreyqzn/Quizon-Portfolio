@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/assets/img/pfp.jpg" />
+    <link rel="apple-touch-icon" href="/assets/img/pfp.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Andrey Quizon — Frontend Developer</title>
     <meta
@@ -21,8 +22,8 @@
       (function () {
         try {
           var stored = localStorage.getItem('theme')
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          var dark = stored === 'dark' || (stored !== 'light' && prefersDark)
+          // Dark is the default unless the user explicitly chose light.
+          var dark = stored !== 'light'
           document.documentElement.classList.toggle('dark', dark)
         } catch (e) {
           document.documentElement.classList.add('dark')
@@ -31,7 +32,14 @@
     </script>
   </head>
   <body>
+    <div id="boot-loader" aria-hidden="true">
+      <div class="boot-loader__mark">
+        <span class="boot-loader__line"></span>
+        <span class="boot-loader__label">Loading</span>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+

@@ -79,6 +79,41 @@ export const fallbackContent: PortfolioContent = {
       repoUrl: 'https://github.com/andreyqzn/Quizon-Portfolio',
     },
   ],
+  socialsPage: {
+    displayName: 'Heiz',
+    links: [
+      {
+        label: 'Instagram',
+        handle: '@heizzzx',
+        url: 'https://www.instagram.com/heizzzx/',
+        iconSlug: 'instagram',
+        sortOrder: 0,
+      },
+    ],
+  },
+  connectLinks: [
+    {
+      label: 'Instagram',
+      handle: '@heizzzx',
+      url: 'https://www.instagram.com/heizzzx/',
+      iconSlug: 'instagram',
+      sortOrder: 0,
+    },
+    {
+      label: 'GitHub',
+      handle: 'andreyqzn',
+      url: 'https://github.com/andreyqzn',
+      iconSlug: 'github',
+      sortOrder: 1,
+    },
+    {
+      label: 'LinkedIn',
+      handle: 'Andrey Quizon',
+      url: 'https://www.linkedin.com/in/andrey-quizon-5a188a373/',
+      iconSlug: 'linkedin',
+      sortOrder: 2,
+    },
+  ],
 }
 
 /** @deprecated use fallbackContent — kept for any legacy imports */

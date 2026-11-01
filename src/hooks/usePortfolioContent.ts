@@ -33,6 +33,9 @@ export function usePortfolioContent() {
         techRes,
         beyondRes,
         projectsRes,
+        socialsPageRes,
+        socialLinksRes,
+        connectLinksRes,
       ] = await Promise.all([
         supabase.from('profile').select('*').eq('id', 1).maybeSingle(),
         supabase.from('about').select('*').eq('id', 1).maybeSingle(),
@@ -41,6 +44,9 @@ export function usePortfolioContent() {
         supabase.from('tech_stack').select('*').eq('id', 1).maybeSingle(),
         supabase.from('beyond_coding').select('*').eq('id', 1).maybeSingle(),
         supabase.from('projects').select('*').order('sort_order', { ascending: true }),
+        supabase.from('socials_page').select('*').eq('id', 1).maybeSingle(),
+        supabase.from('social_links').select('*').order('sort_order', { ascending: true }),
+        supabase.from('connect_links').select('*').order('sort_order', { ascending: true }),
       ])
 
       const firstError =
@@ -130,6 +136,32 @@ export function usePortfolioContent() {
                 }
               })
             : fallbackContent.projects,
+        socialsPage: {
+          displayName:
+            socialsPageRes.data?.display_name || fallbackContent.socialsPage.displayName,
+          links:
+            !socialLinksRes.error && socialLinksRes.data && socialLinksRes.data.length > 0
+              ? socialLinksRes.data.map((row) => ({
+                  id: row.id,
+                  label: row.label,
+                  handle: row.handle ?? '',
+                  url: row.url,
+                  iconSlug: row.icon_slug || 'link',
+                  sortOrder: row.sort_order,
+                }))
+              : fallbackContent.socialsPage.links,
+        },
+        connectLinks:
+          !connectLinksRes.error && connectLinksRes.data && connectLinksRes.data.length > 0
+            ? connectLinksRes.data.map((row) => ({
+                id: row.id,
+                label: row.label,
+                handle: row.handle ?? '',
+                url: row.url,
+                iconSlug: row.icon_slug || 'link',
+                sortOrder: row.sort_order,
+              }))
+            : fallbackContent.connectLinks,
       }
 
       setContent(mapped)

@@ -1,6 +1,6 @@
+import { GraduationCap } from 'lucide-react'
 import type { EducationContent } from '../types/portfolio'
-import { EducationIcon } from './icons'
-import { Card } from './Card'
+import { Reveal } from './Reveal'
 import { SectionTitle } from './SectionTitle'
 
 type EducationProps = {
@@ -9,13 +9,13 @@ type EducationProps = {
 
 export function Education({ education }: EducationProps) {
   return (
-    <Card className="md:col-span-5">
-      <SectionTitle icon={<EducationIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
-        Education
-      </SectionTitle>
-      <h4 className="text-base font-medium text-primary">{education.degree}</h4>
-      <p className="text-sm text-primary">{education.school}</p>
-      <p className="mt-1 text-sm text-muted">{education.detail}</p>
-    </Card>
+    <Reveal as="section" className="border-t border-border py-16 md:py-20">
+      <SectionTitle icon={GraduationCap}>Education</SectionTitle>
+      <div className="max-w-2xl">
+        <h4 className="text-lg font-medium tracking-tight text-primary md:text-xl">{education.degree}</h4>
+        <p className="mt-1 text-base text-primary">{education.school}</p>
+        <p className="mt-3 text-sm text-muted md:text-base">{education.detail}</p>
+      </div>
+    </Reveal>
   )
 }

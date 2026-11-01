@@ -305,3 +305,83 @@ insert into public.projects (
   false,
   1
 );
+
+-- ---------------------------------------------------------------------------
+-- Socials landing page (/socials)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.socials_page (
+  id int primary key check (id = 1),
+  display_name text not null default 'Heiz',
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.social_links (
+  id uuid primary key default gen_random_uuid(),
+  label text not null,
+  handle text not null default '',
+  url text not null,
+  icon_slug text not null default 'link',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.connect_links (
+  id uuid primary key default gen_random_uuid(),
+  label text not null,
+  handle text not null default '',
+  url text not null,
+  icon_slug text not null default 'link',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+drop trigger if exists socials_page_updated_at on public.socials_page;
+create trigger socials_page_updated_at before update on public.socials_page
+for each row execute function public.set_updated_at();
+
+alter table public.socials_page enable row level security;
+alter table public.social_links enable row level security;
+alter table public.connect_links enable row level security;
+
+drop policy if exists "Public read socials_page" on public.socials_page;
+create policy "Public read socials_page" on public.socials_page for select using (true);
+
+drop policy if exists "Public read social_links" on public.social_links;
+create policy "Public read social_links" on public.social_links for select using (true);
+
+drop policy if exists "Public read connect_links" on public.connect_links;
+create policy "Public read connect_links" on public.connect_links for select using (true);
+
+drop policy if exists "Auth write socials_page" on public.socials_page;
+create policy "Auth write socials_page" on public.socials_page for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+drop policy if exists "Auth write social_links" on public.social_links;
+create policy "Auth write social_links" on public.social_links for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+drop policy if exists "Auth write connect_links" on public.connect_links;
+create policy "Auth write connect_links" on public.connect_links for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+insert into public.socials_page (id, display_name)
+values (1, 'Heiz')
+on conflict (id) do update set display_name = excluded.display_name;
+
+insert into public.social_links (label, handle, url, icon_slug, sort_order)
+select 'Instagram', '@heizzzx', 'https://www.instagram.com/heizzzx/', 'instagram', 0
+where not exists (select 1 from public.social_links);
+
+insert into public.connect_links (label, handle, url, icon_slug, sort_order)
+select v.label, v.handle, v.url, v.icon_slug, v.sort_order
+from (
+  values
+    ('Instagram', '@heizzzx', 'https://www.instagram.com/heizzzx/', 'instagram', 0),
+    ('GitHub', 'andreyqzn', 'https://github.com/andreyqzn', 'github', 1),
+    ('LinkedIn', 'Andrey Quizon', 'https://www.linkedin.com/in/andrey-quizon-5a188a373/', 'linkedin', 2)
+) as v(label, handle, url, icon_slug, sort_order)
+where not exists (select 1 from public.connect_links);

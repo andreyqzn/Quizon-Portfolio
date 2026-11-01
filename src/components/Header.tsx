@@ -1,52 +1,82 @@
+import { FileText, Mail, MapPin } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { ProfileContent } from '../types/portfolio'
-import type { Theme } from '../hooks/useTheme'
-import { CvIcon, EmailIcon, LocationIcon } from './icons'
-import { ThemeToggle } from './ThemeToggle'
+import { cn } from '../lib/cn'
 
 type HeaderProps = {
   profile: ProfileContent
-  theme: Theme
-  onToggleTheme: () => void
 }
 
-export function Header({ profile, theme, onToggleTheme }: HeaderProps) {
+export function Header({ profile }: HeaderProps) {
+  const reduceMotion = useReducedMotion()
+
   return (
-    <header className="flex flex-row items-stretch justify-start gap-[15px]">
-      <img
-        src={profile.photoUrl}
-        alt={`${profile.name} profile photo`}
-        className="h-40 w-40 shrink-0 rounded-lg object-cover"
-      />
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div>
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-lg font-bold text-primary md:text-[25px]">{profile.name}</h1>
-            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-          </div>
-          <p className="mt-0.5 flex items-center justify-start text-xs text-muted md:text-base">
-            <LocationIcon className="mr-1.5 h-3 w-3 md:h-4 md:w-4" />
+    <header className="relative">
+      <div className="grid items-end gap-10 md:grid-cols-12 md:gap-12">
+        <motion.div
+          className="order-2 md:order-1 md:col-span-7"
+          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <p className="mb-4 flex items-center gap-2 text-sm tracking-wide text-muted uppercase">
+            <MapPin className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
             <span>{profile.location}</span>
           </p>
-          <h2 className="mt-0.5 text-[13px] font-normal text-primary md:text-base">{profile.role}</h2>
-        </div>
-        <div className="mt-1.5 flex flex-col">
-          <a
-            href={profile.resumeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-7 w-fit items-center rounded-lg border border-cta bg-cta px-2 text-[10px] font-medium text-cta-text transition-transform duration-300 hover:[transform:perspective(500px)_translateZ(20px)] md:h-8 md:px-4 md:text-sm"
+
+          <h1 className="font-display text-5xl leading-[0.95] tracking-tight text-primary sm:text-6xl md:text-7xl lg:text-8xl">
+            {profile.name}
+          </h1>
+
+          <p className="mt-5 max-w-md text-base text-muted md:text-lg">{profile.role}</p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                'inline-flex h-11 items-center gap-2 rounded-full bg-cta px-5 text-sm font-medium text-cta-text',
+                'hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              )}
+            >
+              <FileText className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              Resume
+            </a>
+            <a
+              href={`mailto:${profile.email}`}
+              className={cn(
+                'inline-flex h-11 items-center gap-2 rounded-full border border-border bg-transparent px-5 text-sm font-medium text-primary',
+                'hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              )}
+            >
+              <Mail className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              Email
+            </a>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="order-1 md:order-2 md:col-span-5"
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+        >
+          <div
+            data-theme-dodge
+            className="relative -mx-6 h-[58vw] overflow-hidden rounded-2xl sm:h-[48vw] md:mx-0 md:aspect-[4/5] md:h-auto md:rounded-3xl"
           >
-            <CvIcon className="mr-1.5 h-3 w-3 md:h-[18px] md:w-[18px]" />
-            Resume
-          </a>
-          <a
-            href={`mailto:${profile.email}`}
-            className="mt-1.5 inline-flex h-7 w-fit items-center rounded-lg border border-border bg-transparent px-2 text-[10px] font-medium text-primary transition-transform duration-300 hover:[transform:perspective(500px)_translateZ(20px)] md:h-8 md:px-4 md:text-sm"
-          >
-            <EmailIcon className="mr-1.5 h-3 w-3 md:h-[18px] md:w-[18px]" />
-            Send Email
-          </a>
-        </div>
+            <img
+              src={profile.photoUrl}
+              alt={`${profile.name} profile photo`}
+              width={800}
+              height={1000}
+              decoding="async"
+              fetchPriority="high"
+              className="h-full w-full object-cover object-center"
+            />
+          </div>
+        </motion.div>
       </div>
     </header>
   )

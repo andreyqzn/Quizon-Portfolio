@@ -1,5 +1,5 @@
-import { AboutIcon } from './icons'
-import { Card } from './Card'
+import { User } from 'lucide-react'
+import { Reveal } from './Reveal'
 import { SectionTitle } from './SectionTitle'
 
 type AboutProps = {
@@ -8,18 +8,18 @@ type AboutProps = {
 
 export function About({ paragraphs }: AboutProps) {
   return (
-    <Card className="md:col-span-5">
-      <SectionTitle icon={<AboutIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
-        About
-      </SectionTitle>
-      {paragraphs.map((paragraph, index) => (
-        <p
-          key={`${index}-${paragraph.slice(0, 24)}`}
-          className={`text-sm leading-relaxed text-primary ${index > 0 ? 'mt-4' : ''}`}
-        >
-          {paragraph}
-        </p>
-      ))}
-    </Card>
+    <Reveal as="section" className="border-t border-border py-16 md:py-20">
+      <SectionTitle icon={User}>About</SectionTitle>
+      <div className="max-w-2xl space-y-5">
+        {paragraphs.map((paragraph, index) => (
+          <p
+            key={`${index}-${paragraph.slice(0, 24)}`}
+            className="text-base leading-relaxed text-primary md:text-lg md:leading-relaxed"
+          >
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </Reveal>
   )
 }

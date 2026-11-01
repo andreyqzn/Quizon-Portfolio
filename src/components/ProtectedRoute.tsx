@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { LoaderMark } from './LoaderMark'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, configured } = useAuth()
@@ -22,8 +23,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted">
-        Checking session…
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-page"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <span className="sr-only">Checking session</span>
+        <LoaderMark label="Loading" />
       </div>
     )
   }

@@ -1,11 +1,17 @@
+import { Code2 } from 'lucide-react'
 import type { TechStackContent } from '../types/portfolio'
-import { TechIcon } from './icons'
-import { Card } from './Card'
+import { cn } from '../lib/cn'
+import { Reveal } from './Reveal'
 import { SectionTitle } from './SectionTitle'
 
 function Chip({ label }: { label: string }) {
   return (
-    <span className="inline-block rounded-md border border-chip-border px-2 py-0.5 text-xs text-primary">
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border border-chip-border px-3.5 py-1.5 text-sm text-primary',
+        'transition-colors hover:border-primary hover:bg-subtle',
+      )}
+    >
       {label}
     </span>
   )
@@ -16,38 +22,29 @@ type TechStackProps = {
 }
 
 export function TechStack({ techStack }: TechStackProps) {
-  return (
-    <Card className="md:col-span-5">
-      <SectionTitle icon={<TechIcon className="h-4 w-4 md:h-[18px] md:w-[18px]" />}>
-        Tech Stack
-      </SectionTitle>
+  const groups = [
+    { title: 'Frontend', items: techStack.frontend },
+    { title: 'Backend', items: techStack.backend },
+    { title: 'Tools', items: techStack.tools },
+  ] as const
 
-      <div className="mt-2.5 space-y-3">
-        <div>
-          <h4 className="mb-2.5 text-base font-medium text-primary">Frontend</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {techStack.frontend.map((item) => (
-              <Chip key={item} label={item} />
-            ))}
+  return (
+    <Reveal as="section" className="border-t border-border py-16 md:py-20">
+      <SectionTitle icon={Code2}>Tech Stack</SectionTitle>
+      <div className="grid gap-10 md:grid-cols-3 md:gap-8">
+        {groups.map((group) => (
+          <div key={group.title}>
+            <h4 className="mb-4 text-xs font-medium tracking-[0.14em] text-muted uppercase">
+              {group.title}
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {group.items.map((item) => (
+                <Chip key={item} label={item} />
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <h4 className="mb-2.5 text-base font-medium text-primary">Backend</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {techStack.backend.map((item) => (
-              <Chip key={item} label={item} />
-            ))}
-          </div>
-        </div>
-        <div>
-          <h4 className="mb-2.5 text-base font-medium text-primary">Tools</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {techStack.tools.map((item) => (
-              <Chip key={item} label={item} />
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
-    </Card>
+    </Reveal>
   )
 }
