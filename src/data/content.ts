@@ -7,7 +7,7 @@ export const profile = {
   photoUrl: '/assets/img/pfp.jpg',
   socials: {
     instagram: 'https://www.instagram.com/heizzzx/',
-    github: 'https://github.com/a-quizon',
+    github: 'https://github.com/andreyqzn',
     linkedin: 'https://www.linkedin.com/in/andrey-quizon-5a188a373/',
   },
 }
@@ -89,6 +89,6 @@ export const projects: Project[] = [
     tech: ['HTML', 'CSS', 'Bootstrap', 'JavaScript'],
     image: '/assets/img/FinalProject.png',
     liveUrl: '/demos/dinas-mami-house/index.html',
-    repoUrl: 'https://github.com/a-quizon/Quizon-Portfolio',
+    repoUrl: 'https://github.com/andreyqzn/Quizon-Portfolio',
   },
 ]

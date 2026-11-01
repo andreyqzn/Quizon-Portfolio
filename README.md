@@ -2,7 +2,8 @@
 
 Employment-ready personal portfolio for **Andrey C. Quizon**, Frontend Developer (Pampanga, Philippines).
 
-**Live:** [https://andrey-quizon-portfolio.vercel.app](https://andrey-quizon-portfolio.vercel.app)
+**Live:** [https://andrey-quizon-portfolio-delta.vercel.app](https://andrey-quizon-portfolio-delta.vercel.app)  
+**GitHub:** [andreyqzn/Quizon-Portfolio](https://github.com/andreyqzn/Quizon-Portfolio)
 
 **Stack:** Vite · React · TypeScript · Tailwind CSS  
 **Features:** Dark / light mode, selected projects (Smart Queue, Dina's Mami House), resume download
@@ -21,8 +22,8 @@ npm run preview
 
 ## Deploy on Vercel (Phase A)
 
-1. Push this repo to GitHub (current school account is fine for the first deploy).
-2. Sign in at [vercel.com](https://vercel.com) with that GitHub account.
+1. Push this repo to GitHub (`andreyqzn/Quizon-Portfolio`).
+2. Sign in at [vercel.com](https://vercel.com) with your personal GitHub/Vercel account.
 3. **Add New Project** → Import this repository.
 4. Framework preset: **Vite** (or rely on `vercel.json`).
 5. Build command: `npm run build` · Output: `dist`.
