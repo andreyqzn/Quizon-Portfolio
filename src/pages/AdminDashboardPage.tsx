@@ -312,7 +312,8 @@ export function AdminDashboardPage() {
       setError('Photo must be 2MB or smaller')
       return
     }
-    const ext = file.name.split('.').pop() || 'jpg'
+    const previousPath = photoPath
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const path = `photo/profile.${ext}`
     setSaving(true)
     setError(null)
@@ -323,12 +324,16 @@ export function AdminDashboardPage() {
       return
     }
     const { error: err } = await supabase.from('profile').update({ photo_path: path }).eq('id', 1)
-    setSaving(false)
     if (err) {
+      setSaving(false)
       setError(err.message)
       return
     }
+    if (previousPath && previousPath !== path) {
+      await removePortfolioAsset(previousPath)
+    }
     setPhotoPath(path)
+    setSaving(false)
     setStatus('Photo updated')
     await refresh()
   }
@@ -343,9 +348,14 @@ export function AdminDashboardPage() {
       setError('Resume must be 5MB or smaller')
       return
     }
+    const previousPath = resumePath
     const path = 'resume/cv.pdf'
     setSaving(true)
     setError(null)
+    // Replace in place; also clear any older alternate resume path first.
+    if (previousPath && previousPath !== path) {
+      await removePortfolioAsset(previousPath)
+    }
     const uploaded = await uploadPortfolioAsset(path, file)
     if (uploaded.error) {
       setError(uploaded.error)
@@ -367,8 +377,22 @@ export function AdminDashboardPage() {
     if (!file || !supabase) return
     const project = projects[index]
     const slug = project.slug || slugify(project.title) || `project-${index}`
-    const ext = file.name.split('.').pop() || 'png'
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
     const path = `projects/${slug}.${ext}`
+    const previousPath =
+      project.image && !project.image.startsWith('/') && !project.image.startsWith('http')
+        ? project.image
+        : null
+    // Prefer storage path from DB-style keys when image is a public URL of our bucket.
+    const previousStoragePath = (() => {
+      if (!project.image) return null
+      const marker = `/object/public/portfolio-assets/`
+      const idx = project.image.indexOf(marker)
+      if (idx >= 0) return decodeURIComponent(project.image.slice(idx + marker.length))
+      if (!project.image.startsWith('/') && !project.image.startsWith('http')) return project.image
+      return previousPath
+    })()
+
     setSaving(true)
     setError(null)
     const uploaded = await uploadPortfolioAsset(path, file)
@@ -385,6 +409,10 @@ export function AdminDashboardPage() {
         setSaving(false)
         return
       }
+    }
+
+    if (previousStoragePath && previousStoragePath !== path) {
+      await removePortfolioAsset(previousStoragePath)
     }
 
     setProjects((prev) =>
@@ -809,7 +837,14 @@ export function AdminDashboardPage() {
         <div className="space-y-6 rounded-[10px] border border-border bg-card p-4">
           <div>
             <h2 className="mb-2 text-base font-medium text-primary">Profile photo</h2>
-            <img src={photoPreview} alt="Profile preview" className="mb-3 h-32 w-32 rounded-lg object-cover" />
+            <img
+              src={photoPreview}
+              alt="Profile preview"
+              className="mb-3 h-32 w-32 rounded-lg border border-border object-cover"
+            />
+            {!hasCustomPhoto ? (
+              <p className="mb-2 text-xs text-muted">Using default profile placeholder.</p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="file"
@@ -817,32 +852,34 @@ export function AdminDashboardPage() {
                 disabled={saving}
                 onChange={(e) => void onPhotoChange(e.target.files?.[0] ?? null)}
               />
-              {hasCustomPhoto ? (
-                <button
-                  type="button"
-                  className={btnGhost}
-                  disabled={saving}
-                  onClick={() => void onPhotoRemove()}
-                >
-                  Remove photo
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={saving || !hasCustomPhoto}
+                onClick={() => void onPhotoRemove()}
+              >
+                Remove photo
+              </button>
             </div>
             <p className="mt-1 text-xs text-muted">
-              JPEG/PNG/WebP, max 2MB. Stored at photo/profile.*
-              {!hasCustomPhoto ? ' · Showing default placeholder' : ''}
+              JPEG/PNG/WebP, max 2MB. New uploads replace and delete the previous storage file.
             </p>
           </div>
           <div>
             <h2 className="mb-2 text-base font-medium text-primary">Resume (PDF)</h2>
-            <a
-              href={resumePreview}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mb-3 inline-block text-sm text-primary underline"
-            >
-              {hasCustomResume ? 'Current resume' : 'Default resume placeholder'}
-            </a>
+            <div className="mb-3 rounded-lg border border-dashed border-border bg-well px-4 py-3">
+              <p className="text-sm text-primary">
+                {hasCustomResume ? 'Custom resume uploaded' : 'No custom resume — placeholder in use'}
+              </p>
+              <a
+                href={resumePreview}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-block text-sm text-primary underline"
+              >
+                {hasCustomResume ? 'Open current resume' : 'Open resume placeholder'}
+              </a>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="file"
@@ -850,20 +887,17 @@ export function AdminDashboardPage() {
                 disabled={saving}
                 onChange={(e) => void onResumeChange(e.target.files?.[0] ?? null)}
               />
-              {hasCustomResume ? (
-                <button
-                  type="button"
-                  className={btnGhost}
-                  disabled={saving}
-                  onClick={() => void onResumeRemove()}
-                >
-                  Remove resume
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={saving || !hasCustomResume}
+                onClick={() => void onResumeRemove()}
+              >
+                Remove resume
+              </button>
             </div>
             <p className="mt-1 text-xs text-muted">
-              PDF only, max 5MB. Stored at resume/cv.pdf
-              {!hasCustomResume ? ' · Showing default placeholder' : ''}
+              PDF only, max 5MB. New uploads replace and delete the previous storage file.
             </p>
           </div>
         </div>

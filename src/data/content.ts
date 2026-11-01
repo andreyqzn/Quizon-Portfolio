@@ -6,8 +6,8 @@ export const fallbackContent: PortfolioContent = {
     role: 'Frontend Developer',
     location: 'Pampanga, Philippines',
     email: 'canilaoquizonandrey@gmail.com',
-    resumeUrl: '/documents/QuizonAndrey-CV.pdf',
-    photoUrl: '/assets/img/pfp.jpg',
+    resumeUrl: '/documents/resume-placeholder.pdf',
+    photoUrl: '/assets/img/profile-placeholder.svg',
     socials: {
       instagram: 'https://www.instagram.com/heizzzx/',
       github: 'https://github.com/andreyqzn',
