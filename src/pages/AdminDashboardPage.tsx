@@ -73,6 +73,10 @@ export function AdminDashboardPage() {
   // Asset paths from DB (not resolved URLs)
   const [photoPath, setPhotoPath] = useState<string | null>(null)
   const [resumePath, setResumePath] = useState<string | null>(null)
+  // Staged photo changes — applied only when Save photo is clicked
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null)
+  const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null)
+  const [pendingPhotoRemove, setPendingPhotoRemove] = useState(false)
 
   useEffect(() => {
     setName(content.profile.name)
@@ -306,36 +310,25 @@ export function AdminDashboardPage() {
     })
   }
 
-  async function onPhotoChange(file: File | null) {
-    if (!file || !supabase) return
+  function clearPendingPhotoPreview() {
+    setPendingPhotoPreview((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+      return null
+    })
+  }
+
+  function onPhotoChange(file: File | null) {
+    if (!file) return
     if (file.size > 2 * 1024 * 1024) {
       setError('Photo must be 2MB or smaller')
       return
     }
-    const previousPath = photoPath
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const path = `photo/profile.${ext}`
-    setSaving(true)
     setError(null)
-    const uploaded = await uploadPortfolioAsset(path, file)
-    if (uploaded.error) {
-      setError(uploaded.error)
-      setSaving(false)
-      return
-    }
-    const { error: err } = await supabase.from('profile').update({ photo_path: path }).eq('id', 1)
-    if (err) {
-      setSaving(false)
-      setError(err.message)
-      return
-    }
-    if (previousPath && previousPath !== path) {
-      await removePortfolioAsset(previousPath)
-    }
-    setPhotoPath(path)
-    setSaving(false)
-    setStatus('Photo updated')
-    await refresh()
+    clearPendingPhotoPreview()
+    setPendingPhotoRemove(false)
+    setPendingPhotoFile(file)
+    setPendingPhotoPreview(URL.createObjectURL(file))
+    setStatus('New photo selected — click Save photo to apply')
   }
 
   async function onResumeChange(file: File | null) {
@@ -427,29 +420,89 @@ export function AdminDashboardPage() {
     await refresh()
   }
 
-  async function onPhotoRemove() {
-    if (!supabase || !photoPath) return
+  function onPhotoRemove() {
+    if (pendingPhotoFile) {
+      const ok = window.confirm('Discard the selected photo and keep the current one?')
+      if (!ok) return
+      clearPendingPhotoPreview()
+      setPendingPhotoFile(null)
+      setPendingPhotoRemove(false)
+      setStatus(null)
+      return
+    }
+
+    if (!photoPath) return
     const ok = window.confirm(
-      'Remove the profile photo from storage and the database?\n\nThe site will fall back to the default placeholder photo.',
+      'Mark the profile photo for removal?\n\nClick Save photo to delete it from storage and use the default placeholder.',
     )
     if (!ok) return
 
+    setPendingPhotoRemove(true)
+    setStatus('Photo marked for removal — click Save photo to apply')
+  }
+
+  async function savePhoto() {
+    if (!supabase) return
+    if (!pendingPhotoFile && !pendingPhotoRemove) return
+
     setSaving(true)
     setError(null)
-    const removed = await removePortfolioAsset(photoPath)
-    if (removed.error) {
-      setError(removed.error)
+
+    if (pendingPhotoRemove) {
+      const previousPath = photoPath
+      if (previousPath) {
+        const removed = await removePortfolioAsset(previousPath)
+        if (removed.error) {
+          setError(removed.error)
+          setSaving(false)
+          return
+        }
+      }
+      const { error: err } = await supabase.from('profile').update({ photo_path: null }).eq('id', 1)
+      if (err) {
+        setError(err.message)
+        setSaving(false)
+        return
+      }
+      setPhotoPath(null)
+      setPendingPhotoRemove(false)
+      clearPendingPhotoPreview()
+      setPendingPhotoFile(null)
+      setSaving(false)
+      setStatus('Photo removed — using default placeholder')
+      await refresh()
+      return
+    }
+
+    const file = pendingPhotoFile!
+    const previousPath = photoPath
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    // Unique path so browsers/CDN don't keep showing the old cached image.
+    const path = `photo/profile-${Date.now()}.${ext}`
+    const uploaded = await uploadPortfolioAsset(path, file)
+    if (uploaded.error) {
+      setError(uploaded.error)
       setSaving(false)
       return
     }
-    const { error: err } = await supabase.from('profile').update({ photo_path: null }).eq('id', 1)
-    setSaving(false)
+
+    const { error: err } = await supabase.from('profile').update({ photo_path: path }).eq('id', 1)
     if (err) {
       setError(err.message)
+      setSaving(false)
       return
     }
-    setPhotoPath(null)
-    setStatus('Photo removed — using default placeholder')
+
+    if (previousPath && previousPath !== path) {
+      await removePortfolioAsset(previousPath)
+    }
+
+    setPhotoPath(path)
+    clearPendingPhotoPreview()
+    setPendingPhotoFile(null)
+    setPendingPhotoRemove(false)
+    setSaving(false)
+    setStatus('Photo saved')
     await refresh()
   }
 
@@ -479,10 +532,14 @@ export function AdminDashboardPage() {
     await refresh()
   }
 
-  const photoPreview = getPublicAssetUrl(photoPath) || fallbackContent.profile.photoUrl
+  const livePhotoUrl = getPublicAssetUrl(photoPath) || fallbackContent.profile.photoUrl
+  const photoPreview = pendingPhotoRemove
+    ? fallbackContent.profile.photoUrl
+    : pendingPhotoPreview || livePhotoUrl
   const resumePreview = getPublicAssetUrl(resumePath) || fallbackContent.profile.resumeUrl
-  const hasCustomPhoto = Boolean(photoPath)
+  const hasCustomPhoto = Boolean(photoPath) && !pendingPhotoRemove
   const hasCustomResume = Boolean(resumePath)
+  const photoDirty = Boolean(pendingPhotoFile) || pendingPhotoRemove
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl bg-page px-4 py-8">
@@ -842,7 +899,11 @@ export function AdminDashboardPage() {
               alt="Profile preview"
               className="mb-3 h-32 w-32 rounded-lg border border-border object-cover"
             />
-            {!hasCustomPhoto ? (
+            {pendingPhotoFile ? (
+              <p className="mb-2 text-xs text-muted">Preview only — not live until you click Save photo.</p>
+            ) : pendingPhotoRemove ? (
+              <p className="mb-2 text-xs text-muted">Marked for removal — click Save photo to apply.</p>
+            ) : !photoPath ? (
               <p className="mb-2 text-xs text-muted">Using default profile placeholder.</p>
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
@@ -850,19 +911,27 @@ export function AdminDashboardPage() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 disabled={saving}
-                onChange={(e) => void onPhotoChange(e.target.files?.[0] ?? null)}
+                onChange={(e) => onPhotoChange(e.target.files?.[0] ?? null)}
               />
               <button
                 type="button"
                 className={btnGhost}
-                disabled={saving || !hasCustomPhoto}
-                onClick={() => void onPhotoRemove()}
+                disabled={saving || (!hasCustomPhoto && !pendingPhotoFile)}
+                onClick={() => onPhotoRemove()}
               >
                 Remove photo
               </button>
+              <button
+                type="button"
+                className={btnClass}
+                disabled={saving || !photoDirty}
+                onClick={() => void savePhoto()}
+              >
+                Save photo
+              </button>
             </div>
             <p className="mt-1 text-xs text-muted">
-              JPEG/PNG/WebP, max 2MB. New uploads replace and delete the previous storage file.
+              JPEG/PNG/WebP, max 2MB. Choose a file, then Save photo to publish and delete the previous one.
             </p>
           </div>
           <div>
